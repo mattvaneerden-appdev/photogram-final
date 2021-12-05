@@ -1,0 +1,174 @@
+<h1><%= @the_user.username %></h1>
+
+<dl>
+  <dt>Private</dt>
+  <dd>
+  <%= @the_user.private %>
+  <%#
+  <% if @the_user.private %>
+  <%#    <dd>
+          Yes
+      </dd>
+      <% else %>
+  <%#    <dd>
+          No
+      </dd>
+      <% end %>
+  </dd>
+
+  <dt>Followers</dt>
+  <dd>
+    <%= @the_user.inbox.where({ :status => "accepted" }).count %>
+      
+      <div>
+
+        <% if cookie_id = session.fetch(:user_id) %>
+        <% current_user = User.where({ :id => cookie_id }).at(0) %>
+        <% existing_request = current_user.sent.where({ :recipient_id => @the_user.id }).at(0) %>
+              
+          <% if existing_request %>
+            <% state = existing_request.status %>
+          
+            <%if state == "pending" %>
+              Request sent. <a href="/delete_follow_request/<%= existing_request.id %>">Cancel</a>
+
+            <% elsif state == "accepted" %>  
+              <a href="/delete_follow_request/<%= existing_request.id %>">Unfollow</a>
+            
+            <% else # rejected %>
+            <% end %>  
+            
+          <% else %>
+            <form action="/insert_follow_request" method="post">
+              <input type="hidden" name="query_recipient_id" value="<%= cookie_id %>">
+              <button>
+                Follow
+              </button>
+            </form>
+          <% end %>
+        <% end %>
+      </div>
+      
+    
+      <h4>Pending follow requests</h4>
+
+      <ul>
+      <% @the_user.inbox.where({ :status => "pending" }).each do |pending| %>
+          <li>
+            <%= pending.follower.username %>
+
+            <form action="/modify_follow_request/<%= pending.id %>" method="post">
+              <input name="query_status" value="accepted" type="hidden">
+
+              <button>
+                Accept
+              </button>
+            </form>
+
+            <form action="/modify_follow_request/<%= pending.id %>" method="post">
+              <input name="query_status" value="rejected" type="hidden">
+            
+              <button>
+                Reject
+              </button>
+            </form>
+          </li>
+          <% end %>
+      </ul>
+  </dd>
+
+  <dt>Following</dt>
+  <dd>
+    <%= @the_user.sent.where({ :status => "accepted" }).count %>
+  </dd>
+<% if @the_user.id == session.fetch(:user_id) %>
+  <dt>Edit user</dt>
+  <dd>
+    <form action="/modify_user/<%= session.fetch(:user_id) %>" method="post">
+      <label for="browser_username">Username</label>
+      <input id="browser_username" type="text" name="query_username" value="<%= @the_user.username %>">
+
+      <label for="browser_private">Private?</label>
+      <input id="browser_private" type="checkbox" name="query_private"  checked>
+
+      <button>Update user</button>
+    </form>
+  </dd>
+<% end %>
+</dl>
+
+<nav>
+  <ul>
+    <li>
+      <a href="/users/<%= @the_user.username %>">Profile</a>
+    </li>
+    <li>
+      <a href="/users/<%= @the_user.username %>/liked_photos">Liked photos</a>
+    </li>
+    <li>
+      <a href="/users/<%= @the_user.username %>/feed">Feed</a>
+    </li>
+    <li>
+      <a href="/users/<%= @the_user.username %>/discover">Discover</a>
+    </li>
+  </ul>
+</nav>
+
+<h2>Own photos (<%= @the_user.photos.count %>)</h2>
+
+<table border="1">
+  <tr>
+    <th>
+      Image
+    </th>
+
+    <th>
+      Owner
+    </th>
+
+    <th>
+      Caption
+    </th>
+
+    <th>
+      Posted
+    </th>
+
+    <th>
+      Likes
+    </th>
+
+    <th></th>
+  </tr>
+
+<% @the_user.photos.order({ :created_at => :desc }).each do |pic| %>
+  <tr>
+    <td>
+      <%#img src= <% photo.image %>
+      <img src= <%= pic.picture %>>
+    </td>
+
+    <td>
+      <%= @the_user.username %>
+    </td>
+
+    <td>
+      <%= pic.caption %>
+    </td>
+
+    <td>
+      <%= time_ago_in_words(pic.created_at) %> ago
+    </td>
+
+    <td>
+      <%= pic.likes.count %>
+    </td>
+
+    <td>
+      <a href="/photos/<%= pic.id %>">
+        Show details
+      </a>
+    </td>
+  </tr>
+<% end %>
+</table>

@@ -1,0 +1,65 @@
+<h1>List of users</h1>
+
+<table border="1">
+  <tr>
+    <th>
+      Username
+    </th>
+
+    <th>
+      Private?
+    </th>
+
+    <th></th>
+    <th></th>
+  </tr>
+    <% @users.each do |user| %>
+    <tr>
+      <td>
+        <%= user.username %>
+      </td>
+
+      <% if user.private %>
+      <td>
+          Yes
+      </td>
+      <% else %>
+      <td>
+          No
+      </td>
+      <% end %>
+
+      <td>
+
+        <% if cookie_id = session.fetch(:user_id) %>
+        <% current_user = User.where({ :id => cookie_id }).at(0) %>
+        <% existing_request = current_user.sent.where({ :recipient_id => user.id }).at(0) %>
+              
+          <% if existing_request %>
+            <% state = existing_request.status %>
+          
+            <%if state == "pending" %>
+              Request sent. <a href="/delete_follow_request/<%= existing_request.id %>">Cancel</a>
+
+            <% elsif state == "accepted" %>  
+              <a href="/delete_follow_request/<%= existing_request.id %>">Unfollow</a>
+            
+            <% else # rejected %>
+            <% end %>  
+
+          <% else %>
+            <form action="/insert_follow_request" method="post">
+              <input type="hidden" name="query_recipient_id" value="<%= user.id %>">
+              <button>
+                Follow
+              </button>
+            </form>
+          <% end %>
+        <% end %>
+      </td>
+              
+      <td>
+        <a href="/users/<%= user.username %>">Show details</a>
+      </td>
+    </tr>
+    <% end %>
